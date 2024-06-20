@@ -22,7 +22,7 @@ h1 {
 	bottom:0;
 	left:0;
 	right:0;
-	color:802500;
+	color: #802500;
 	z-index:-1;	
 	text-shadow: 
 		3px 3px 0 #802500, 
@@ -30,4 +30,4 @@ h1 {
 		9px 9px 0 #802500, 
 		12px 12px 0 #802500, 
 		15px 15px 0 #802500;
-)
+}
