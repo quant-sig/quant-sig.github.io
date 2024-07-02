@@ -122,6 +122,7 @@ body, html {
 	color: #843414; 
 	font-size: 1.2em;
 	font-family: "Helvetica";
+	font-weight: 50;
 }
 
 .nav-link:hover {
@@ -167,7 +168,7 @@ h1 .text {
 	font-size: 4em;
 	font-weight: 800;
 	font-style: italic;
-	background-image: linear-gradient(to top, red, yellow);
+	background-image: linear-gradient(to top, #ff4000, yellow);
 	color: transparent;
 	-webkit-background-clip: text;
 	background-clip: text;
