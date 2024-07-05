@@ -4,6 +4,18 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Add this at the beginning of your script, after canvas initialization
+let originalWidth = window.innerWidth;
+let originalHeight = window.innerHeight;
+
+// Add this event listener after your other initializations
+window.addEventListener('resize', handleResize);
+
+function handleResize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
 class Boid {
     constructor() {
         this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -63,7 +75,7 @@ class Boid {
     }
 
     cohesion(boids) {
-        let neighborDist = 50;
+        let neighborDist = 80;
         let sum = new Vector(0, 0);
         let count = 0;
         for (let other of boids) {
@@ -165,10 +177,16 @@ class Boid {
 class Predator extends Boid {
     constructor() {
         super();
-        this.maxSpeed = 4.5; // Faster than regular boids
-        this.maxForce = 0.3; // Stronger steering force
-        this.perceptionRadius = 100; // Larger perception radius
-        this.color = 'rgba(255, 0, 0, 0.8)'; // Red color for predators
+        this.maxSpeed = 4.5;
+        this.normalSpeed = 4.5;
+        this.minSpeed = 2.0; // Minimum speed after eating
+        this.currentSpeed = this.normalSpeed;
+        this.accelerationRate = 0.01; // Rate at which speed increases after eating
+        this.maxForce = 0.3;
+        this.perceptionRadius = 200;
+        this.eatRadius = 15;
+        this.color = 'rgba(256, 0, 4, 0.8)';
+        this.justAte = false;
     }
 
     hunt(boids) {
@@ -184,15 +202,28 @@ class Predator extends Boid {
         }
         
         if (closest) {
+            if (closestDist < this.eatRadius) {
+                this.eat(closest, boids);
+                return new Vector(0, 0);
+            }
             return this.seek(closest.position);
         } else {
             return new Vector(0, 0);
         }
     }
 
+    eat(boid, boids) {
+        let index = boids.indexOf(boid);
+        if (index > -1) {
+            boids.splice(index, 1);
+        }
+        this.currentSpeed = this.minSpeed;
+        this.justAte = true;
+    }
+
     update(boids, predators) {
         let hunt = this.hunt(boids);
-        let sep = this.separate(predators); // Avoid other predators
+        let sep = this.separate(predators);
 
         hunt.mult(1.5);
         sep.mult(1.0);
@@ -200,24 +231,32 @@ class Predator extends Boid {
         this.acceleration.add(hunt);
         this.acceleration.add(sep);
 
+        // Gradually increase speed if below normal
+        if (this.currentSpeed < this.normalSpeed) {
+            this.currentSpeed = Math.min(this.currentSpeed + this.accelerationRate, this.normalSpeed);
+        }
+
         this.velocity.add(this.acceleration);
-        this.velocity.limit(this.maxSpeed);
+        this.velocity.limit(this.currentSpeed);
         this.position.add(this.velocity);
         this.acceleration.mult(0);
         
         this.borders();
+
+        // Reset justAte flag
+        this.justAte = false;
     }
 
     draw() {
         let angle = Math.atan2(this.velocity.y, this.velocity.x);
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = this.justAte ? 'rgba(128, 0, 128, 0.8)' : this.color; // Purple immediately after eating
         ctx.save();
         ctx.translate(this.position.x, this.position.y);
         ctx.rotate(angle);
         ctx.beginPath();
-        ctx.moveTo(20, 0);
-        ctx.lineTo(-10, 10);
-        ctx.lineTo(-10, -10);
+        ctx.moveTo(16, 0);
+        ctx.lineTo(-8, 8);
+        ctx.lineTo(-8, -8);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
@@ -273,6 +312,11 @@ class Vector {
         let dy = this.y - v.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
+	
+    static random2D() {
+        let angle = Math.random() * Math.PI * 2;
+        return new Vector(Math.cos(angle), Math.sin(angle));
+    }
 
     static sub(v1, v2) {
         return new Vector(v1.x - v2.x, v1.y - v2.y);
@@ -281,14 +325,18 @@ class Vector {
 
 const boids = [];
 const predators = [];
-const numBoids = 80;
-const MAX_PREDATORS = 10;
+const numBoids = 256;
+const MAX_PREDATORS = 16;
 
 for (let i = 0; i < numBoids; i++) {
     boids.push(new Boid());
 }
 
 document.addEventListener('click', spawnPredator);
+
+function random(min, max) {
+    return Math.random() * (max - min) + min;
+}
 
 function spawnPredator(event) {
     if (predators.length >= MAX_PREDATORS) {
@@ -305,8 +353,24 @@ function spawnPredator(event) {
     predators.push(predator);
 }
 
+function spawnNewBoids(count) {
+    for (let i = 0; i < count; i++) {
+        let boid = new Boid();
+        boid.position = new Vector(0, 0); // Top-left corner
+        boid.velocity = Vector.random2D();
+        boid.velocity.mult(random(2, 4));
+        boids.push(boid);
+    }
+}
+
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Check if we need to spawn new boids
+    if (boids.length < 128) {
+        let boidsToSpawn = 256 - boids.length;
+        spawnNewBoids(boidsToSpawn);
+    }
     
     for (let boid of boids) {
         boid.update(boids, predators);
@@ -326,3 +390,4 @@ animate();
 document.addEventListener('click', (e) => {
 	console.log('Click registered at:', e.clientX, e.clientY);
 });
+
