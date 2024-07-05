@@ -17,8 +17,13 @@ function handleResize() {
 }
 
 class Boid {
-    constructor() {
-        this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+    constructor(position=null) {
+	if (position) {
+            this.position = position;
+        } else {
+            this.position = new Vector(canvas.width / 2, canvas.height / 2);
+        }
+//        this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
         this.velocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1);
         this.acceleration = new Vector(0, 0);
         this.maxForce = 0.2;
@@ -327,9 +332,17 @@ const boids = [];
 const predators = [];
 const numBoids = 256;
 const MAX_PREDATORS = 16;
+const scatteredPercentage = 0.8; // 20% of boids will be scattered
 
 for (let i = 0; i < numBoids; i++) {
-    boids.push(new Boid());
+    if (Math.random() < scatteredPercentage) {
+        // Spawn scattered boid
+        let position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+        boids.push(new Boid(position));
+    } else {
+        // Spawn at center
+        boids.push(new Boid());
+    }
 }
 
 document.addEventListener('click', spawnPredator);

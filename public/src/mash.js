@@ -20,42 +20,53 @@ class MashText {
         this.waveLength = 10;
     }
 
-    init() {
-        this.pElement.style.display = 'none';
-        
-        // Create a container for all segments
-        this.container = document.createElement('a');
-        this.container.href = this.href;
-        this.container.target = this.target;
-        this.container.style.position = 'fixed';
-        this.container.style.textDecoration = 'none';
-        document.body.appendChild(this.container);
+	init() {
+	    this.pElement.style.display = 'none';
+	    
+	    // Create a container for all segments
+	    this.container = document.createElement('a');
+	    this.container.href = this.href;
+	    this.container.target = this.target;
+	    this.container.style.position = 'fixed';
+	    this.container.style.textDecoration = 'none';
+	    document.body.appendChild(this.container);
 
-        // Initialize segments
-        for (let i = 0; i < this.numSegments; i++) {
-            const segment = document.createElement('span');
-            segment.textContent = this.text[i];
-            segment.style.position = 'absolute';
-            segment.style.fontSize = '20px';
-            segment.style.fontWeight = 'bold';
-            segment.style.color = '#ffac04'; //`hsl(${i * 360 / this.numSegments}, 100%, 50%)`;
-            this.container.appendChild(segment);
-            this.segments.push({
-                element: segment,
-                x: 0,
-                y: 0
-            });
-        }
+	    // Initialize segments with random positions
+	    const randomAngle = Math.random() * Math.PI * 2;
+	    const centerX = Math.random() * (window.innerWidth - 2 * this.padding) + this.padding;
+	    const centerY = Math.random() * (window.innerHeight - 2 * this.padding) + this.padding;
 
-        this.leadX = Math.random() * (window.innerWidth - 2 * this.padding) + this.padding;
-        this.leadY = Math.random() * (window.innerHeight - 2 * this.padding) + this.padding;
-        
-        const angle = Math.random() * Math.PI * 2;
-        this.velocityX = Math.cos(angle) * this.speed;
-        this.velocityY = Math.sin(angle) * this.speed;
+	    for (let i = 0; i < this.numSegments; i++) {
+		const segment = document.createElement('span');
+		segment.textContent = this.text[i];
+		segment.style.position = 'absolute';
+		segment.style.fontSize = '32px';
+		segment.style.fontWeight = 'bold';
+		segment.style.color = '#ffac04';
+		this.container.appendChild(segment);
 
-        this.animate();
-    }
+		// Calculate position along the random angle
+		const distance = i * this.segmentDistance;
+		const x = centerX + Math.cos(randomAngle) * distance;
+		const y = centerY + Math.sin(randomAngle) * distance;
+
+		this.segments.push({
+		    element: segment,
+		    x: x,
+		    y: y
+		});
+	    }
+
+	    // Set lead position to the first segment
+	    this.leadX = this.segments[0].x;
+	    this.leadY = this.segments[0].y;
+	    
+	    const angle = Math.random() * Math.PI * 2;
+	    this.velocityX = Math.cos(angle) * this.speed;
+	    this.velocityY = Math.sin(angle) * this.speed;
+
+	    this.animate();
+	}
 
     animate() {
         const steer = this.avoidBorders();
