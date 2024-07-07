@@ -173,7 +173,6 @@ h1 .text {
 	-webkit-background-clip: text;
 	background-clip: text;
 	text-decoration: none; /* Remove default underline */
-	z-index: 1;
 }
 
 h1 .text::before {
@@ -228,7 +227,6 @@ h2 .text {
 	-webkit-background-clip: text;
 	background-clip: text;
 	text-decoration: none; /* Remove default underline */
-	z-index: 1;
 }
 
 h2 .text::before {
@@ -283,7 +281,6 @@ h3 .text {
 	-webkit-background-clip: text;
 	background-clip: text;
 	text-decoration: none; /* Remove default underline */
-	z-index: 1;
 }
 
 h3 .text::before {
