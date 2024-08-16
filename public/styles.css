@@ -41,7 +41,7 @@ body, html {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	z-index: -1;
+	z-index: -2;
 }
 
 .dvd-link {
@@ -258,7 +258,7 @@ h2 .text::before {
 h3 {
     text-align: center;
     position: relative;
-    padding-bottom: 30px;
+    padding-bottom: 15px;
     font-style: italic;
     font-weight: bold;
 }
@@ -317,6 +317,54 @@ p a {
 p a:hover {
     color: #ffac04; /* A slightly lighter orange for hover effect */
     text-decoration: underline; /* Adds underline on hover */
+}
+.scoreboard {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto; /* This centers the table */
+}
+
+.scoreboard td {
+    text-decoration: none;
+    color: #843414; 
+    font-size: 1.25em;
+    font-family: "Helvetica", sans-serif;
+    font-weight: 50;
+    padding: 5px ; /* Use padding instead of margin for spacing */
+}
+.scoreboard th .text {
+	position: relative;
+	font-size: 1.75em;
+	background-image: linear-gradient(to top, #ff4000, yellow);
+	color: transparent;
+	-webkit-background-clip: text;
+	background-clip: text;
+	text-decoration: none; /* Remove default underline */
+}
+
+.scoreboard th .text::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: transparent;
+    z-index: -1;
+    text-shadow:
+        1px 1px 0 #802500,
+        2px 2px 0 #802500,
+        3px 3px 0 #802500;
+}
+
+.scoreboard th:first-child,
+.scoreboard td:first-child {
+    text-align: left;
+}
+
+.scoreboard th:last-child,
+.scoreboard td:last-child {
+    text-align: right;
 }
 
 footer {
