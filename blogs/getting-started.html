@@ -1,0 +1,90 @@
+<!DOCTYPE html> <html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>about</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="icon" type="image/png" href="favicon.png">
+</head>
+	<div class="fullscreen">
+		<div class="content-layer">
+		    	<header>
+				<nav>
+					<div class="nav-container">
+						<a href="index.html" class="logo-link">
+							<h2 class="logo">
+								<span class="text" data-text="quantsig" href="index.html">quantsig</span>
+							</h2>
+						</a>
+						<ul class="nav-menu">
+							<li class="nav-item"><a href="../about.html" class="nav-link">About</a></li>
+							<li class="nav-item"><a href="../blogs.html" class="nav-link">Blogs</a></li>
+							<li class="nav-item"><a href="../contact.html" class="nav-link">Contact Us</a></li>
+						</ul>
+					</div>
+				</nav>
+			</header>
+			<div class="content">    
+				<div class="blog-content">
+					<div class="blog-header">
+						<h1 class="blog-title">Getting Started</h1>
+						<p class="authors">Marnix</p>
+					</div>
+					    
+					<p class="code-block">To anyone new here, and doesn't know how or where to start with your own quant journey at QuantSIG.</p>
+					    
+					<h2 class="blog-subtitle">Setting Up Your Account</h2>
+
+					<p class="blog-text">Warm welcome! At QuantSIG we use a platform called <a href="https://www.quantconnect.com/">QuantConnect</a> for market data and backtesting strategies. Setting up a QuantConnect account is fairly easy, just:</p>
+
+					<ol class="blog-list">
+						<li>Create an account at <a href="https://www.quantconnect.com/">QuantConnect</a></li>
+						<li>Enter basic information (email, password)</li>
+						<li>Allow cookies and avoid using incognito windows</li>
+						<li>Provide credit/debit card information (for security purposes)</li>
+						<li>Select your preferred programming language (C# or Python)</li>
+					</ol>
+				    
+				    <p class="blog-text">Once you're set up, you need to go to your profile and select a preferred language (C# or Python), and you're good to go! For any issue QuantConnect will have further steps to take depending on the specifics issue you run into. You can DM @committee if further help is needed...</p>
+
+				    <h2 class="blog-subtitle">Creating and Testing Strategies</h2>
+				    
+				    <p class="blog-text">Now that you have set up an account, you can create a strategy to backtest. What this entails is programming 'signals' to trade on. For example:</p>
+				    
+				    <div class="code-block">if Nvidia share price > threshold, buy</div>
+				    
+				    <p class="blog-text">There is a list of strategies on <a href="https://www.quantconnect.com/docs/v2/writing-algorithms/strategy-library">QuantConnect Strategy Library</a>. Most suck but it gives ideas as to what's possible.</p>
+				    
+				    <p class="blog-text">When you have written your strategy, you can then backtest it. When done backtesting, you will get your results, and after scrolling down you will see a table of a bunch of metrics indicating how 'good' your strategy is. Some commonly used ones are:</p>
+				    
+				    <div class="metrics-box">
+					<ul class="metrics-list">
+					    <li><a href="https://www.investopedia.com/terms/s/sharperatio.asp">Sharpe ratio</a></li>
+					    <li><a href="https://www.investopedia.com/terms/s/sortinoratio.asp">Sortino ratio</a></li>
+					    <li><a href="https://www.investopedia.com/terms/d/drawdown.asp">Drawdown</a></li>
+					    <li><a href="https://www.investopedia.com/terms/t/treynorratio.asp">Treynor ratio</a></li>
+					    <li><a href="https://www.investopedia.com/terms/a/alpha.asp">Alpha</a></li>
+					    <li><a href="https://www.investopedia.com/terms/b/beta.asp">Beta</a></li>
+					    <li><a href="https://www.investopedia.com/terms/v/variance.asp">Annual variance</a></li>
+					</ul>
+					
+				    </div>
+					<p class="blog-text">As you can see a lot of this info will be available on <a href="https://www.investopedia.com/">Investopedia</a>. Don't try and overfit your strategy by optimizing for every single one of these... these should just indicate how your strategy performed over the backtested period, so don't worry too much about most of these, especially when starting out.</p>
+
+				    <h2 class="blog-subtitle">Creating a Strategy</h2>
+				    
+				    <p class="blog-text">Now let's talk about actually creating a strategy. It is entirely up to you how you do it. The vast majority of funds trying to 'generate alpha' (i.e outperform the market for returns) will have some form of their own research teams looking for new ways to generate returns, minimize risk, predict things like future volatility, etc.</p>
+				    
+				    <p class="blog-text">Many admit that most of the strategies will be based off of academic white papers, the vast majority of which we all have access to. QuantSIG has a 'papers' channel where relevant papers are shared, but you should also look for them yourself. They do not need to be papers aimed at exploring a concept in the markets... they can also be papers exploring signal processing techniques to study vibrations in certain materials, and as you will see, many of these papers can be applied in developing trading strategies.</p>
+				    
+				    <p class="blog-text">There are some good books, videos, blogs, etc out there to start. Best of luck...</p>
+				</div>				
+				<!-- <footer>
+					<p class="blog-text">&copy; 2024 QuantSIG. All rights reserved.</p>
+				</footer> -->
+			</div>
+		</div>
+    	</div>
+</body>
+</html>
