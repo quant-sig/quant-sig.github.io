@@ -1,0 +1,300 @@
+<!DOCTYPE html> <html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>about</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="icon" type="image/png" href="favicon.png">
+</head>
+	<div class="fullscreen">
+		<div class="content-layer">
+		    	<header>
+				<nav>
+					<div class="nav-container">
+						<a href="../index.html" class="logo-link">
+							<h2 class="logo">
+								<span class="text" data-text="quantsig" href="../index.html">quantsig</span>
+							</h2>
+						</a>
+						<ul class="nav-menu">
+							<li class="nav-item"><a href="../about.html" class="nav-link">About</a></li>
+							<li class="nav-item"><a href="../blogs.html" class="nav-link">Blogs</a></li>
+							<li class="nav-item"><a href="../contact.html" class="nav-link">Contact Us</a></li>
+						</ul>
+					</div>
+				</nav>
+			</header>
+			<div class="content">    
+			    <div class="blog-content">
+				<div class="blog-header">
+				    <h1 class="blog-title">Introduction to QuantConnect</h1>
+				    <p class="authors">Ryan</p>
+				    <p class="blog-quote">This is written for those who have some knowledge of Python and basic finance terms. If you don't get anything, ask Claude 3.5 Sonnet or ask in #general.</p>
+				</div>
+				
+				<p class="blog-text"><a href="https://www.quantconnect.com/">QuantConnect</a> is the platform where we run our algorithms. You <em>can</em> use C#, but we'll be using Python for the sake of simplicity. Opening an account is pretty easy, but you'll have to link a credit card. Don't worry about it too much, you won't be charged unless you explicitly sign up for paid tiers.</p>
+
+				<p class="blog-text">Diving straight in, you will be greeted with this code when you start a blank QuantConnect file:</p>
+
+				<div class="code-block">
+	    <pre>
+# region imports
+from AlgorithmImports import *
+# endregion
+
+class HipsterApricotHyena(QCAlgorithm):
+
+    def initialize(self):
+    self.set_start_date(2023, 7, 13)
+    self.set_cash(100000)
+    self.add_equity("SPY", Resolution.MINUTE)
+    self.add_equity("BND", Resolution.MINUTE)
+    self.add_equity("AAPL", Resolution.MINUTE)
+
+    def on_data(self, data: Slice):
+    if not self.portfolio.invested:
+	self.set_holdings("SPY", 0.33)
+	self.set_holdings("BND", 0.33)
+	self.set_holdings("AAPL", 0.33)</pre>
+</div>
+
+				<p class="blog-text">There are three functions you need to care about: <span class="inline-code">initialize()</span>, <span class="inline-code">onData()</span>, and <span class="inline-code">train()</span>.</p>
+				
+				<ul class="blog-list">
+				    <li><span class="inline-code">Initialize()</span> is where you declare all your details: starting cash, symbols, test period, train period, etc. <a href="https://www.quantconnect.com/docs/v2/writing-algorithms/initialization">More settings available here.</a></li>
+				    <li><span class="inline-code">OnData()</span> is the the code that gets looped every unit time (e.g day) for the test period. This is where you want to apply your strategy.</li>
+				    <li><span class="inline-code">train()</span> gets run before <span class="inline-code">onData()</span> to train your model. For larger models (e.g RNNs) you might want to pretrain it somewhere else and call it directly in <span class="inline-code">onData()</span>, but that comes later.</li>
+				</ul>
+
+				<p class="blog-text">We'll be using SPY in this tutorial. We'll also change how it's represented in the <span class="inline-code">initialize()</span> function just to make it easier to deal with.</p>
+
+				<div class="code-block">
+				    <pre>
+# region imports
+from AlgorithmImports import *
+# endregion
+
+class HipsterApricotHyena(QCAlgorithm):
+
+def initialize(self):
+    self.set_start_date(2023, 7, 13)
+    self.set_end_date(2024, 12, 31)
+    self.set_cash(100000)
+
+    # this lets us use it to compare it against a buy-and-hold strategy later
+    self.symbol = self.AddEquity("SPY", Resolution.Daily).Symbol  
+    self.set_benchmark(self.symbol)
+
+def on_data(self, data: Slice):</pre>
+				</div>
+
+				<ul class="blog-list">
+				    <li><span class="inline-code">AddEquity()</span> adds the particular symbol (SPY in this case) into your model</li>
+				    <li>The <span class="inline-code">Resolution</span> parameter defines the frequency of data - it gives you the averaged value for that particular frequency</li>
+				    <li><span class="inline-code">self.set_benchmark</span> is a function we'll need to define later. It won't work right now.</li>
+				</ul>
+				
+				<br>
+		    
+				<p class="blog-text">Broadly speaking, the algorithm can be broken down into two components:</p>
+				<ol class="blog-list">
+				    <li>Prediction</li>
+				    <li>Strategy</li>
+				</ol>
+
+				<p class="blog-text">Prediction refers to obtaining <em>as accurate as possible</em> a value for a specific metric - price, volatility, etc. The better your prediction, the more confidence you can place on your model, and the larger the sum you can entrust to your algorithm.</p>
+
+				<p class="blog-text">Strategy, on the other hand, refers to <strong>what you do with the value</strong>. For instance, you might know that SPY (selling for 582.19 at time of writing) might reach 600 tomorrow, then drop to 200 the day after. The most straightforward thing to do would be to buy it immediately, sell tomorrow, and short it for the day after. If you're not certain in your model's prediction, you might hedge it with call/put options to cap your potential losses. If you have supreme confidence in your prediction, you might sell a ton of put options the first day and call options the second. The number of combinations and permutations of things you can do only increases from here, and that's for you to study in your own time. Resources are linked at the bottom.</p>
+
+				<p class="blog-text">In this tutorial, we will be implementing logistic regression with momentum on SPY. Add these imports at the top of your file:</p>
+
+				<div class="code-block">
+<pre>
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression</pre>
+				</div>
+				
+				<br>
+				<h2 class="blog-subtitle">Modeling SPY</h2>	
+				<p class="blog-text">A model, in essence, is a learned function that maps input 'X' to prediction 'Y'. In this tutorial, we'll be predicting the <strong>future direction</strong> given the relative differences between the past three days. To do that, we first define the training period with <span class="inline-code">self.History()</span> in <span class="inline-code">initialize()</span>:</p>
+
+				    <div class="code-block">
+					<pre>
+def initialize(self):
+    self.set_start_date(2023, 7, 13)
+    self.set_end_date(2024, 12, 31)
+    self.set_cash(100000)
+    self.symbol = self.AddEquity("SPY", Resolution.Daily).Symbol 
+    self.set_benchmark(self.symbol)
+
+    history = self.History(self.symbol, 1800, Resolution.Daily)
+    self.model = self.train(history) </pre>
+    </div>
+
+			    <p class="blog-text">Looking at the three parameters we have, <span class="inline-code">self.symbol</span>, <span class="inline-code">1800</span>, and <span class="inline-code">Resolution.Daily</span></p>
+			    <ul class="blog-list">
+				<li><span class="inline-code">self.symbol</span> and <span class="inline-code">Resolution.Daily</span> are self explanatory - while you <em>can</em> use other symbols and resolutions, we'll keep it the same as the test data</li>
+				<li><span class="inline-code">1800</span> simply defines the <em>number of days</em> in the test period. Again, you can further define it and increase specificity if you so wish.</li>
+				<li><span class="inline-code">self.model = self.train(history)</span> is where you keep the trained model to be used in test time. This is what we'll be working on next.</li>
+			    </ul>
+			    <p class="blog-text">It's important to note that data is king. Andrej Karpathy states this very well:</p>
+			    
+			    <blockquote class="blog-quote">
+				<p>The first step to training a neural net is to not touch any neural net code at all and instead begin by thoroughly inspecting your data. This step is critical. I like to spend copious amount of time (measured in units of hours) scanning through thousands of examples, understanding their distribution and looking for patterns.</p>
+			    </blockquote>
+
+			    <p class="blog-text">Therefore, we'll always start by looking at the data. To do this, we'll move to the <span class="inline-code">research.ipynb</span> located in the same directory.</p>
+
+			    <p class="blog-text">Here's the initalization code, we will skip all those details for now and look directly at the data:</p>
+
+    <div class="code-block">
+        <pre>
+# Add this to the top of your research.ipynb
+qb = QuantBook()
+spy = qb.AddEquity("SPY")
+df = qb.History(qb.Securities.Keys, 1800, Resolution.Daily)
+df</pre>
+    </div>
+
+			    <p class="blog-text">Next comes playing around with pandas. While we highly encourage you to experiment, that's for you to do in your own time. Here, we are using the <strong>relative changes</strong> between days, then normalizing them.</p>
+
+    <div class="code-block">
+        <pre>
+# trailing average values for the past three days
+df['average'] = (df['high'] + df['low']) / 2
+df['lag_1'] = df['average'].shift(1)
+df['lag_2'] = df['average'].shift(2)
+df['lag_3'] = df['average'].shift(3)
+
+# interday differences
+df['diff_1'] = df['average'] - df['lag_1']
+df['diff_2'] = df['lag_1'] - df['lag_2']
+df['diff_3'] = df['lag_2'] - df['lag_3']
+
+# interday gradients
+df['grad_1'] = df['diff_1'] / df['lag_1'] # relative to the previous day
+df['grad_2'] = df['diff_2'] / df['lag_2']
+df['grad_3'] = df['diff_3'] / df['lag_3']
+
+def normalize(series):
+    mean = series.mean()
+    std = series.std()
+    return (series - mean) / std
+
+df['grad_1_norm'] = normalize(df['grad_1'])
+df['grad_2_norm'] = normalize(df['grad_2'])
+df['grad_3_norm'] = normalize(df['grad_3'])</pre>
+    </div>
+
+			    <p class="blog-text">This constitutes the 'X' element of the function. For Y, we make another column describing whether the stock moves up or down the next day.</p>
+
+    <div class="code-block">
+        <pre>
+# 1 if it moves up, 0 if it stays the same/moves down
+df['target'] = np.where(df['average'].shift(-1) > df['average'], 1, 0)</pre>
+    </div>
+
+			    <p class="blog-text">We can just leave this as a pandas DataFrame for later. Now we can go back to the main algorithm and look at the <span class="inline-code">train()</span> function:</p>
+
+    <div class="code-block">
+        <pre>
+def train(self, history):
+        df = pd.DataFrame(history)
+
+        # trailing average values for the past three days
+        df['average'] = (df['high'] + df['low']) / 2
+        df['lag_1'] = df['average'].shift(1)
+        df['lag_2'] = df['average'].shift(2)
+        df['lag_3'] = df['average'].shift(3)
+
+        # interday differences
+        df['diff_1'] = df['average'] - df['lag_1']
+        df['diff_2'] = df['lag_1'] - df['lag_2']
+        df['diff_3'] = df['lag_2'] - df['lag_3']
+
+        # interday gradients
+        df['grad_1'] = df['diff_1'] / df['lag_1'] # relative to the previous day
+        df['grad_2'] = df['diff_2'] / df['lag_2']
+        df['grad_3'] = df['diff_3'] / df['lag_3']
+
+        def normalize(series):
+            mean = series.mean()
+            std = series.std()
+            return (series - mean) / std
+
+        df['grad_1_norm'] = normalize(df['grad_1'])
+        df['grad_2_norm'] = normalize(df['grad_2'])
+        df['grad_3_norm'] = normalize(df['grad_3'])
+        
+        # target
+        df['target'] = np.where(df['average'].shift(-1) > df['average'], 1, 0)
+
+        if df.empty:
+            self.Log("Training data is empty. Cannot train model.")
+            return None, None</pre>
+    </div>
+
+			    <p class="blog-text">And for the final step of this section, we create the X and Y features, initialize the model, and train it. Almost everything is abstracted away by the libraries, so it's worthwhile to manually write it out every now and then.</p>
+
+    <div class="code-block">
+        <pre>
+X = df[['grad_1_norm', 'grad_2_norm', 'grad_3_norm']].dropna() # dropna() removes the empty values created when we shifted the data
+y = df[['target']]
+model = LogisticRegression()
+model.fit(X, y)</pre>
+    </div>
+
+			    <p class="blog-text">This is how your function should look altogether now:</p>
+
+    <div class="code-block">
+        <pre>
+def train(self, history):
+        df = pd.DataFrame(history)
+
+        # trailing average values for the past three days
+        df['average'] = (df['high'] + df['low']) / 2
+        df['lag_1'] = df['average'].shift(1)
+        df['lag_2'] = df['average'].shift(2)
+        df['lag_3'] = df['average'].shift(3)
+
+        # interday differences
+        df['diff_1'] = df['average'] - df['lag_1']
+        df['diff_2'] = df['lag_1'] - df['lag_2']
+        df['diff_3'] = df['lag_2'] - df['lag_3']
+
+        # interday gradients
+        df['grad_1'] = df['diff_1'] / df['lag_1'] # relative to the previous day
+        df['grad_2'] = df['diff_2'] / df['lag_2']
+        df['grad_3'] = df['diff_3'] / df['lag_3']
+
+        def normalize(series):
+            mean = series.mean()
+            std = series.std()
+            return (series - mean) / std
+
+        df['grad_1_norm'] = normalize(df['grad_1'])
+        df['grad_2_norm'] = normalize(df['grad_2'])
+        df['grad_3_norm'] = normalize(df['grad_3'])
+        
+        # target
+        df['target'] = np.where(df['average'].shift(-1) > df['average'], 1, 0)
+
+        if df.empty:
+            self.Log("Training data is empty. Cannot train model.")
+            return None, None
+
+        X = df[['grad_1_norm', 'grad_2_norm', 'grad_3_norm']].dropna() # dropna() removes the empty values created when we shifted the data
+        y = df[['target']]
+        model = LogisticRegression()
+        model.fit(X, y)
+
+        return model</pre>
+					</div>
+				</div>
+			</div>
+		</div>
+    	</div>
+</body>
+</html>
