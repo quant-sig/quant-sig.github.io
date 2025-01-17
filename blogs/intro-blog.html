@@ -233,7 +233,7 @@ def train(self, history):
 
         if df.empty:
             self.Log("Training data is empty. Cannot train model.")
-            return None, None</pre>
+            return None</pre>
     </div>
 
 			    <p class="blog-text">And for the final step of this section, we create the X and Y features, initialize the model, and train it. Almost everything is abstracted away by the libraries, so it's worthwhile to manually write it out every now and then.</p>
@@ -283,7 +283,7 @@ def train(self, history):
 
         if df.empty:
             self.Log("Training data is empty. Cannot train model.")
-            return None, None
+            return None
 
         X = df[['grad_1_norm', 'grad_2_norm', 'grad_3_norm']].dropna() # dropna() removes the empty values created when we shifted the data
         y = df[['target']]
@@ -292,6 +292,223 @@ def train(self, history):
 
         return model</pre>
 					</div>
+
+				<h2 class="blog-subtitle">Using the Prediction</h2>
+				    <p class="blog-text">Now we move onto the <span class="inline-code">OnData()</span> function, which will be run when we want to backtest or trade.</p>
+
+				    <p class="blog-text">Let's first add error checking - just paste it at the top of the function:</p>
+				    <div class="code-block">
+					<pre>
+if not data.ContainsKey(self.symbol):
+    return
+
+if self.model is None:
+    self.Log("Model is not trained. Skipping prediction.")
+    return
+					</pre>
+				    </div>
+
+				    <h2 class="blog-subtitle">Predicting the Movement</h2>
+				    <p class="blog-text">Again, we want to <strong>predict the movement</strong> based on the <strong>previous days' movements</strong>. So we take the previous days' data, preprocess it, and apply the model. This is pretty standard Python, so I won't bore you with the details:</p>
+				    <div class="code-block">
+					<pre>
+history = self.History(self.symbol, 10, Resolution.Daily) # past 10 days' worth of data
+df = self.prepare_data(history)
+
+if df.empty: 
+    self.Log("DataFrame is empty. Skipping this OnData call.")
+    return
+
+# obtaining input data, making prediction
+latest_data = df.iloc[[-1]][['grad_1_norm', 'grad_2_norm', 'grad_3_norm']]
+pred = self.model.predict(latest_data)[0]</pre>
+				    </div>
+
+				    <h2 class="blog-subtitle">Making a Decision</h2>
+				    <p class="blog-text">And finally, making a decision. I'll show you the code first, then explain it:</p>
+				    <div class="code-block">
+					<pre>
+buy_threshold = 0.6
+sell_threshold = 0.4
+portfolio_weight = 0.7
+
+if pred >= buy_threshold:
+    self.SetHoldings(self.symbol, portfolio_weight)
+    purchase_price = self.Portfolio[self.symbol].Price
+
+elif pred <= sell_threshold:
+    self.liquidate()
+
+else:
+    pass
+			</pre>
+				    </div>
+
+				    <p class="blog-text">In essence, every strategy can be boiled down to choosing:</p>
+				    <ol class="blog-list">
+					<li>When to buy</li>
+					<li>When to sell</li>
+				    </ol>
+
+				    <p class="blog-text">And there are many ways in which you make this decision. You can use price, volatility, momentum, P/B, and essentially any financial metric to decide; as well as whatever information you deem important and high-signal enough to support your decision. Here, we use <a href="https://quantpedia.com/strategy-tags/momentum/">momentum</a>, basing off a stock's tendency to continue moving in its current direction.</p>
+
+				    <p class="blog-text">We'll skip the discussion on the code and focus on the functions involved:</p>
+				    <ul class="blog-list">
+					<li><span class="inline-code">self.SetHoldings()</span> calculates the number of asset units to purchase based on the portfolio weight - as in, the buying power you currently have (0.5 of \$100 = \$50).</li>
+					<li><span class="inline-code">self.Portfolio[self.symbol].Price</span> gets the purchase price of the symbol.</li>
+					<li><span class="inline-code">self.liquidate()</span> liquidates <em>everything</em>. You can pass parameters in to further define how much and what symbols you'd like to liquidate, but here, we are dumping everything if the threshold goes below 0.4.</li>
+				    </ul>
+		    
+				    <p class="blog-text">As your strategies become more sophisticated, the more functions and features you'll be able to involve. QuantConnect lacks good documentation, so reading other people's code can provide you with better insight into the action space.</p>
+
+				    <h2 class="blog-subtitle">Putting Everything Together</h2>
+				    <p class="blog-text">And now, putting everything (everything) together:</p>
+				    <div class="code-block">
+					<pre>
+# region imports
+from AlgorithmImports import *
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+# endregion
+
+class HipsterApricotHyena(QCAlgorithm):
+
+    def initialize(self):
+	self.set_start_date(2023, 7, 13)
+	self.set_end_date(2024, 12, 31)
+	self.set_cash(100000)
+	self.symbol = self.AddEquity("SPY", Resolution.DAILY).Symbol
+
+	# benchmark graph. very useful for visualizations
+	self.set_benchmark(self.symbol)
+	self.cap = 100000
+	self.benchmark_chart = []
+
+	history = self.History(self.symbol, 1800, Resolution.DAILY)
+	self.model = self.train(history)
+
+    def on_data(self, data: Slice):
+	# some checking to prevent errors
+	if not data.ContainsKey(self.symbol):
+	    return
+
+	if self.model is None:
+	    self.Log("Model is not trained. Skipping prediction.")
+	    return
+
+	self.plot_market()
+	# ================================================================   
+	# predicting the movement
+	# ================================================================   
+	# obtaining history
+	history = self.History(self.symbol, 10, Resolution.Daily) # past 10 days' worth of data
+	df = self.prepare_data(history)
+
+	if df.empty: 
+	    self.Log("DataFrame is empty. Skipping this OnData call.")
+	    return
+	
+	# obtaining input data, making prediction
+	latest_data = df.iloc[[-1]][['grad_1_norm', 'grad_2_norm', 'grad_3_norm']]
+	pred = self.model.predict(latest_data)[0]
+	
+	self.Log(f"Date: {self.Time.date()}, Predicted Movement: {pred}")
+
+	# ================================================================   
+	# using the prediction
+	# ================================================================   
+	buy_threshold = 0.6
+	sell_threshold = 0.4
+	portfolio_weight = 0.7
+
+	if pred >= buy_threshold:
+	    self.SetHoldings(self.symbol, portfolio_weight)
+	    purchase_price = self.Portfolio[self.symbol].Price
+	    # self.PlaceStopMarketOrder(purchase_price, direction="long") # hedging
+
+	elif pred <= sell_threshold:
+	    self.liquidate()
+
+	else:
+	    pass
+
+    def train(self, history):
+	df = self.prepare_data(history)
+
+	X = df[['grad_1_norm', 'grad_2_norm', 'grad_3_norm']]
+	y = df[['target']]
+
+	model = LogisticRegression()
+	model.fit(X, y)
+
+	return model
+
+    def prepare_data(self, history):
+	df = pd.DataFrame(history)
+
+	# trailing average values for the past three days
+	df['average'] = (df['high'] + df['low']) / 2
+	df['lag_1'] = df['average'].shift(1)
+	df['lag_2'] = df['average'].shift(2)
+	df['lag_3'] = df['average'].shift(3)
+
+	# interday differences
+	df['diff_1'] = df['average'] - df['lag_1']
+	df['diff_2'] = df['lag_1'] - df['lag_2']
+	df['diff_3'] = df['lag_2'] - df['lag_3']
+
+	# interday gradients
+	df['grad_1'] = df['diff_1'] / df['lag_1'] # relative to the previous day
+	df['grad_2'] = df['diff_2'] / df['lag_2']
+	df['grad_3'] = df['diff_3'] / df['lag_3']
+
+	def normalize(series):
+	    mean = series.mean()
+	    std = series.std()
+	    return (series - mean) / std
+
+	df['grad_1_norm'] = normalize(df['grad_1'])
+	df['grad_2_norm'] = normalize(df['grad_2'])
+	df['grad_3_norm'] = normalize(df['grad_3'])
+	
+	# target
+	df['target'] = np.where(df['average'].shift(-1) > df['average'], 1, 0)
+
+	df = df.dropna(subset=['grad_1', 'grad_2', 'grad_3', 'target'])
+
+	if df.empty:
+	    self.Log("Training data is empty. Cannot train model.")
+	    return pd.DataFrame()
+
+	return df
+
+    def PlaceStopMarketOrder(self, purchase_price, direction):
+	if direction == "long":
+	    stop_price = purchase_price * 0.99  # 1% below purchase price
+	    self.stopMarketTicket = self.StopMarketOrder(self.symbol, -self.Portfolio[self.symbol].Quantity, stop_price)
+	    self.Log(f"Placed stop market order to sell at ${stop_price:.2f} (0.5% below purchase price).")
+	elif direction == "short":
+	    stop_price = purchase_price * 1.01  # 1% above purchase price
+	    self.stopMarketTicket = self.StopMarketOrder(self.symbol, -self.Portfolio[self.symbol].Quantity, stop_price)
+	    self.Log(f"Placed stop market order to cover at ${stop_price:.2f} (0.5% above purchase price).")
+
+
+    def plot_market(self): #plot the market on the Startegy Equity Chart with your portfolio
+	hist = self.History([self.symbol], 252, Resolution.Daily)['close'].unstack(level=0).dropna()
+	self.benchmark_chart.append(hist[self.symbol].iloc[-1])
+	benchmark_perf = self.benchmark_chart[-1] / self.benchmark_chart[0] * self.cap
+	self.Plot("Strategy Equity", "Buy & Hold", benchmark_perf)
+			</pre>
+				    </div>
+
+				    <p class="blog-text">And there you have it - a working (albeit underperforming benchmark) trading algorithm! We've also included hedging and the <span class="inline-code">plot_market()</span> function for you to see how you perform compared to just buying and holding. For any more questions, ask in Discord.</p>
+
+				    <h2 class="blog-subtitle">Acknowledgements</h2>
+				    <ul class="blog-list">
+					<li>Claude 3.5 Sonnet</li>
+					<li>@michaelbol</li>
+				    </ul>
 				</div>
 			</div>
 		</div>
